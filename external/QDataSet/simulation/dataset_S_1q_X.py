@@ -31,7 +31,7 @@ num_ex     = 2000                                    # Number of examples
 batch_size = 50                                       # batch size for TF 
 ##################################################
 # noise parameters
-K          = 128                               # Number of realzations
+K          = 780                               # Number of realzations
 noise_profile   = [0]                                 # Noise type
 ###################################################
 # control parameters
