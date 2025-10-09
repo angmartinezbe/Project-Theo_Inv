@@ -27,8 +27,8 @@ measurement_operators = Pauli_operators[1:]           # measurement operators
 # simulation parameters
 T          = 1                                        # Evolution time
 M          = 256                                    # Number of time steps  
-num_ex     = 200                                    # Number of examples
-batch_size = 5                                       # batch size for TF 
+num_ex     = 2000                                    # Number of examples
+batch_size = 50                                       # batch size for TF 
 ##################################################
 # noise parameters
 K          = 128                               # Number of realzations
