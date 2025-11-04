@@ -26,7 +26,7 @@ measurement_operators = Pauli_operators[1:]           # measurement operators
 ##################################################                          
 # simulation parameters
 T          = 1                                        # Evolution time
-M          = 256                                     # Number of time steps  
+M          = 512                                     # Number of time steps  
 num_ex     = 2000                                    # Number of examples
 batch_size = 50                                       # batch size for TF 
 ##################################################
@@ -42,4 +42,5 @@ num_pulses      = 5                                   # Number of pulses per seq
 sim_parameters = dict( [(k,eval(k)) for k in ["name", "dim", "Omega", "static_operators", "dynamic_operators", "noise_operators", "measurement_operators", "initial_states", "T", "M", "num_ex", "batch_size", "K", "noise_profile", "pulse_shape", "num_pulses"] ])
 CheckNoise(sim_parameters)
 simulate(sim_parameters)
+
 ####################################################
