@@ -47,35 +47,41 @@ class Noise_Layer(layers.Layer):
         # check the noise type, initialize required variables and define the correct "call" method
         if profile==0:   # No noise
             self.call = self.call_0
-        elif profile==1: # PSD of 1/f + a bump
+        elif profile==1: # PSD of 1/f
             alpha        = 1
+            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/32)*(fq>15) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==2: # 1/f^2
+            alpha        = 2
             S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/16)*(fq>15) + np.exp(-((fq-30)**2)/50)/2 for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==2: # Colored Gaussian Stationary Noise
-            self.g      = 0.1
-            self.color  = tf.ones([self.M//4, 1, 1], dtype=tf.float32 )
-            self.call   = self.call_2
         elif profile==3: # Colored Gaussian Non-stationary Noise
-            time_range  = [(0.5*T/M) + (j*T/M) for j in range(M)] 
-            self.g      = 0.2
-            self.color  = tf.ones([self.M//4, 1, 1], dtype=tf.float32 )
-            self.non_stationary = tf.constant( np.reshape( 1-(np.abs(np.array(time_range)-0.5*T)*2), (1,M,1,1) ), dtype=tf.float32)
-            self.call   = self.call_3
-        elif profile==4: # Colored Non-Gaussian Non-stationary Noise
-            time_range  = [(0.5*T/M) + (j*T/M) for j in range(M)] 
-            self.g      = 0.01
-            self.color  = tf.ones([self.M//4, 1, 1], dtype=tf.float32 )
-            self.non_stationary = tf.constant( np.reshape( 1-(np.abs(np.array(time_range)-0.5*T)*2), (1,M,1,1) ), dtype=tf.float32)
-            self.call   = self.call_4
-        elif profile==5: # PSD of 1/f
-            alpha       = 1
-            S_Z         = 1*np.array([(1/(fq+1)**alpha) for fq in f[f>=0]])  
+            const        = 1
+            S_Z         = 1*np.array([const for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
-            self.call   = self.call_1        
-        elif profile==6: # correlated noise      
-            self.g = 0.3
-            self.call = self.call_6
+            self.call = self.call_1
+        elif profile==4: # Constant 1
+            const        = 0.5
+            S_Z         = 1*np.array([const for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==5: # 0.5
+            alpha        = -1
+            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/64)*(fq>=0) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1    
+        elif profile==6: # PSD of 1/f
+            alpha        = 2
+            S_Z         = 1*np.array([(fq-0.5)^2+1/64 for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==7: # PSD of 1/f
+            alpha        = 2
+            S_Z         = 1*np.array([-(fq-0.5)^2+1 for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
 
         
     def call_0(self, inputs, training=False): # No noise
