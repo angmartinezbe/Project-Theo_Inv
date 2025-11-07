@@ -54,32 +54,47 @@ class Noise_Layer(layers.Layer):
             self.call = self.call_1
         elif profile==2: # 1/f^2
             alpha        = 2
-            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/16)*(fq>15) + np.exp(-((fq-30)**2)/50)/2 for fq in f[f>=0]])  
+            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/16)*(fq>0) + np.exp(-((fq-30)**2)/50)/2 for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==3: # Colored Gaussian Non-stationary Noise
+        elif profile==3: # Constant 1
             const        = 1
-            S_Z         = 1*np.array([const for fq in f[f>=0]])  
+            S_Z         = 1*np.array([const for fq*(fq<=15)+ (1/64)*(fq>15) in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==4: # Constant 1
+        elif profile==4: # Constant .5
             const        = 0.5
-            S_Z         = 1*np.array([const for fq in f[f>=0]])  
+            S_Z         = 1*np.array([const for fq*(fq<=15)+ (1/64)*(fq>15) in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==5: # 0.5
-            alpha        = -1
-            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/64)*(fq>=0) for fq in f[f>=0]])  
+        elif profile==5: # lorentzian 1
+            gam        = 1
+            S_Z         = 1*np.array([(gam**2/(fq**2+gam**2)**alpha)*(fq<=15) + (1/64)*(fq>=0) for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1    
-        elif profile==6: # PSD of 1/f
+        elif profile==6: # quadratic(very specific)
             alpha        = 2
-            S_Z         = 1*np.array([(fq-0.5)^2+1/64 for fq in f[f>=0]])  
+            S_Z         = 1*np.array([(fq-0.5)**2*(fq<=15)+ (1/64)*(fq>15) for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==7: # PSD of 1/f
-            alpha        = 2
-            S_Z         = 1*np.array([-(fq-0.5)^2+1 for fq in f[f>=0]])  
+        elif profile==7: # lorentzian 2
+            gam        = .5
+            S_Z         = 1*np.array([(gam**2/(fq**2+gam**2)**alpha)*(fq<=15) + (1/64)*(fq>=0) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1    
+        elif profile==8: # lorentzian 3
+            gam        = .1
+            S_Z         = 1*np.array([(gam**2/(fq**2+gam**2)**alpha)*(fq<=15) + (1/64)*(fq>=0) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1    
+        elif profile==9: # lorentzian 4
+            gam        = .01
+            S_Z         = 1*np.array([(gam**2/(fq**2+gam**2)**alpha)*(fq<=15) + (1/64)*(fq>=0) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1    
+        elif profile==10: # f
+            alpha        = 1
+            S_Z         = 1*np.array([(fq**alpha)*(fq<=15) + (1/64)*(fq>15) + np.exp(-((fq-30)**2)/50)/2 for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
 
