@@ -65,7 +65,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1
-
         elif profile==4: # Constant .5
             const        = 0.5
             S_Z          = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]])[: self.M//2]
@@ -74,7 +73,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1
-
         elif profile==5: # lorentzian 1
             gam         = 1.0
             S_Z         = np.array([
@@ -86,7 +84,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1    
-
         elif profile==6: # quadratic(very specific)
             S_Z         = np.array([(fq-0.5)**2 if fq<=15 else 1/64 for fq in f[f>=0]])[: self.M//2]
             self.P_temp = tf.constant(
@@ -94,7 +91,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1
-
         elif profile==7: # lorentzian 2
             gam         = 0.5
             S_Z         = np.array([
@@ -106,7 +102,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1    
-
         elif profile==8: # lorentzian 3
             gam         = 0.1
             S_Z         = np.array([
@@ -118,7 +113,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1    
-
         elif profile==9: # lorentzian 4
             gam         = 0.01
             S_Z         = np.array([
@@ -130,7 +124,6 @@ class Noise_Layer(layers.Layer):
                 dtype=tf.complex64
             )
             self.call = self.call_1    
-
         elif profile==10: # f
             alpha       = 1
             S_Z         = np.array([(fq**alpha) if fq<=12 else 1/32 for fq in f[f>=0]])[: self.M//2]
