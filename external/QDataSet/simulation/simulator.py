@@ -47,99 +47,98 @@ class Noise_Layer(layers.Layer):
         # check the noise type, initialize required variables and define the correct "call" method
         if profile==0:   # No noise
             self.call = self.call_0
-
-        elif profile==1: # PSD of 1/f + a bump
+        elif profile==1: # PSD of 1/f
             alpha        = 1
-            S_Z          = np.array([(1/(fq+1)**alpha)*(fq<=15) + (1/16)*(fq>15) + np.exp(-((fq-30)**2)/50)/2
-                                     for fq in f[f>=0]], dtype=float)[: self.M // 2]
+            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==2: # 1/f^2
+            alpha        = 2
+            S_Z         = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==3: # Constant 1
+            const        = 1.0
+            S_Z          = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]])[: self.M//2]
             self.P_temp  = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
             self.call = self.call_1
 
-        elif profile==2: # Colored Gaussian Stationary Noise
-            self.g      = 0.1
-            self.color  = tf.ones([self.M//4, 1, 1], dtype=tf.float32 )
-            self.call   = self.call_2
-
-        elif profile==3: # Constant 1
-            const       = 1.0
-            S_Z         = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]],
-                                    dtype=float)[: self.M // 2]
-            self.P_temp = tf.constant(
-                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
-                dtype=tf.complex64
-            )
-            self.call = self.call_1
-
         elif profile==4: # Constant .5
-            const       = 0.5
-            S_Z         = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]],
-                                    dtype=float)[: self.M // 2]
+            const        = 0.5
+            S_Z          = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]])[: self.M//2]
+            self.P_temp  = tf.constant(
+                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
+                dtype=tf.complex64
+            )
+            self.call = self.call_1
+
+        elif profile==5: # lorentzian 1
+            gam         = 1.0
+            S_Z         = np.array([
+                               (gam**2/(fq**2+gam**2)) if fq <= 5 else (gam**2/(12**2+gam**2))
+                           for fq in f[f>=0]
+                           ])[: self.M//2]
+            self.P_temp = tf.constant(
+                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
+                dtype=tf.complex64
+            )
+            self.call = self.call_1    
+
+        elif profile==6: # quadratic(very specific)
+            S_Z         = np.array([(fq-0.5)**2 if fq<=15 else 1/64 for fq in f[f>=0]])[: self.M//2]
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
             self.call = self.call_1
 
-        elif profile==5: # PSD of 1/f
-            alpha       = 1
-            S_Z         = np.array([(1/(fq+1)**alpha) for fq in f[f>=0]],
-                                   dtype=float)[: self.M // 2]
+        elif profile==7: # lorentzian 2
+            gam         = 0.5
+            S_Z         = np.array([
+                               (gam**2/(fq**2+gam**2)) if fq <= 5 else (gam**2/(5**2+gam**2))
+                           for fq in f[f>=0]
+                           ])[: self.M//2]
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
-            self.call   = self.call_1
+            self.call = self.call_1    
 
-        elif profile==6: # correlated noise
-            self.g = 0.3
-            self.call = self.call_6
-
-        elif profile==7: # lorentzian 1
-            gam        = 1.0
-            S_Z        = np.array([ (gam**2 / (fq**2 + gam**2)) if fq <= 5 else (gam**2 / (12**2 + gam**2))
-                                    for fq in f[f>=0] ], dtype=float)[: self.M // 2]
+        elif profile==8: # lorentzian 3
+            gam         = 0.1
+            S_Z         = np.array([
+                               (gam**2/(fq**2+gam**2)) if fq <= 5 else (gam**2/(5**2+gam**2))
+                           for fq in f[f>=0]
+                           ])[: self.M//2]
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
-            self.call = self.call_1
+            self.call = self.call_1    
 
-        elif profile==8: # lorentzian 2
-            gam        = 0.5
-            S_Z        = np.array([ (gam**2 / (fq**2 + gam**2)) if fq <= 5 else (gam**2 / (5**2 + gam**2))
-                                    for fq in f[f>=0] ], dtype=float)[: self.M // 2]
+        elif profile==9: # lorentzian 4
+            gam         = 0.01
+            S_Z         = np.array([
+                               (gam**2/(fq**2+gam**2)) if fq <= 5 else (gam**2/(5**2+gam**2))
+                           for fq in f[f>=0]
+                           ])[: self.M//2]
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
-            self.call = self.call_1
-
-        elif profile==9: # lorentzian 3
-            gam        = 0.1
-            S_Z        = np.array([ (gam**2 / (fq**2 + gam**2)) if fq <= 5 else (gam**2 / (5**2 + gam**2))
-                                    for fq in f[f>=0] ], dtype=float)[: self.M // 2]
-            self.P_temp = tf.constant(
-                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
-                dtype=tf.complex64
-            )
-            self.call = self.call_1
+            self.call = self.call_1    
 
         elif profile==10: # f
-            alpha      = 1
-            S_Z        = np.array([ (fq**alpha) if fq <= 12 else 1/32
-                                    for fq in f[f>=0] ], dtype=float)[: self.M // 2]
+            alpha       = 1
+            S_Z         = np.array([(fq**alpha) if fq<=12 else 1/32 for fq in f[f>=0]])[: self.M//2]
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
             self.call = self.call_1
-
-        else:
-            raise ValueError(f"Unknown noise profile: {profile}")
-
         
     def call_0(self, inputs, training=False): # No noise
         """
@@ -728,4 +727,3 @@ class quantumTFsim():
         """        
         return self.model.predict(simulator_inputs, verbose=1, batch_size = batch_size)
 #############################################################################
-
