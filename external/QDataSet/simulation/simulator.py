@@ -593,29 +593,24 @@ class quantumTFsim():
     This is the main class that defines machine learning model of the qubit.
     """    
       
-    def __init__(self, T, M, dynamic_operators, static_operators, noise_operators, measurement_operators, initial_states, K=1, waveform="Gaussian", num_pulses=5, distortion=False, noise_profile=0):
+    def __init__(self, T, M, dynamic_operators, static_operators, noise_operators, 
+                 measurement_operators, initial_states, K=1, waveform="Gaussian", 
+                 num_pulses=5, distortion=False, noise_profile=0,
+                 noise_mix_weights=None):  # ← ← ← NUEVO parámetro
         """
-        Class constructor.
-
-        T                : Evolution time
-        M                : Number of time steps
-        dynamic_operators: A list of arrays that represent the terms of the control Hamiltonian (that depend on pulses)
-        static_operators : A list of arrays that represent the terms of the drifting Hamiltonian (that are constant)
-        noise_operators  : A list of arrays that represent the terms of the classical noise Hamiltonians
-        K                : Number of noise realizations
-        waveform         : The type of waveform [either "Zero", "Square", or "Gaussian"]
-        num_pulses       : Number of pulses per control sequence
-        distortion       : True for simulating distortions, False for no distortions 
-        noise_profile    : The type of noise, a value chosen from [0,1,2,4,5,6]
+        noise_profile:
+            [p]        → un solo perfil
+            [p1, p2]   → mezcla temporal si noise_mix_weights no es None
+        noise_mix_weights = (w1, w2):
+            pesos crudos → se normalizan internamente → a+b=1
         """
 
         delta_T   = T/M
         self.time_range = [(0.5*T/M) + (j*T/M) for j in range(M)]
         
-        # define a dummy input layer needed to generate the control pulses and noise
         dummy_input = layers.Input(shape=(1,))
-        
-        # define the custom tensorflow layer that generates the control pulses for each direction and concatente if neccesary
+
+        # Pulses (sin cambio)
         if len(dynamic_operators)>1:
             pulses            = [SigGen(T, M, num_pulses, waveform)(dummy_input) for _ in dynamic_operators]
             pulse_parameters  = layers.Concatenate(axis=-1)([p[0] for p in pulses])
@@ -628,18 +623,57 @@ class quantumTFsim():
         else:
             distorted_pulse_time_domain = pulse_time_domain
        
-        # define the custom tensorflow layer that generates the noise realizations in time-domain and concatente if neccesary
-        if len(noise_operators)>1:
-            noise = []
-            for profile in noise_profile:
-                if profile!=6: #uncorrelated along different directions
-                    noise.append( Noise_Layer(T, M, K, profile)(dummy_input) )
-                else:    #correlated with the prevu=ious direction
-                    noise.append( Noise_Layer(T, M, K, profile)(noise[-1]) )               
-            noise_time_domain = layers.Concatenate(axis=-1)(noise)     
-        else:
-            noise_time_domain = Noise_Layer(T, M, K, noise_profile[0])(dummy_input)              
+        ###################################################################
+        # AQUI SE AGREGA LA MEZCLA CORRECTA DE RUIDO
+        ###################################################################
 
+        if isinstance(noise_profile, int):
+            profiles = [noise_profile]
+        else:
+            profiles = list(noise_profile)
+
+        if len(noise_operators) == 1:
+            # Un solo operador → permitimos mezcla temporal
+
+            if len(profiles) == 1 or noise_mix_weights is None:
+                # Caso original: un solo perfil
+                noise_time_domain = Noise_Layer(T, M, K, profiles[0])(dummy_input)
+
+            elif len(profiles) == 2:
+                # Mezcla temporal p1 & p2
+                p1, p2 = profiles
+                w1, w2 = noise_mix_weights
+
+                s = float(w1 + w2)
+                if s == 0.0:
+                    raise ValueError("noise_mix_weights w1+w2 = 0 no es válido.")
+
+                a = w1 / s
+                b = w2 / s
+
+                noise1 = Noise_Layer(T, M, K, p1)(dummy_input)
+                noise2 = Noise_Layer(T, M, K, p2)(dummy_input)
+
+                noise_time_domain = layers.Lambda(
+                    lambda x, a=a, b=b: a*x[0] + b*x[1],
+                    name=f"mixed_noise_profiles_{p1}_{p2}"
+                )([noise1, noise2])
+
+            else:
+                raise ValueError(
+                    f"Solo se permite mezclar hasta 2 perfiles cuando hay 1 operador de ruido. Recibido: {profiles}"
+                )
+
+        else:
+            # Comportamiento original cuando hay varias direcciones de ruido
+            noise = []
+            for profile in profiles:
+                if profile != 6:
+                    noise.append(Noise_Layer(T, M, K, profile)(dummy_input))
+                else:
+                    noise.append(Noise_Layer(T, M, K, profile)(noise[-1]))
+            noise_time_domain = layers.Concatenate(axis=-1)(noise)
+            
         # define the custom tensorflow layer that constructs the H0 part of the Hamiltonian from parameters at each time step
         H0 = HamiltonianConstruction(dynamic_operators=dynamic_operators, static_operators=static_operators, name="H0")(distorted_pulse_time_domain)
 
