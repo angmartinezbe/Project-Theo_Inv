@@ -101,6 +101,96 @@ class Noise_Layer(layers.Layer):
             S_Z         = 1*np.array([(fq**alpha)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])  
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
+        elif profile==11: # 0.5*f
+            alpha        = 1
+            S_Z         = 0.5*np.array([(fq**alpha)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==12: # PSD of 0.5/f
+            alpha        = 1
+            S_Z         = 0.5*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])  
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==13: # 0.5*f+0.5*1/f
+            alpha        = 1
+            S_Z_1         = 1*np.array([(fq**alpha)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])  
+            S_Z_2 = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
+            S_Z=0.5*S_Z_1+0.5*S_Z_2
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==14: # sum of lorentzians 1
+            gam1   = 0.01
+            gam2   = 0.1
+            gam3   = 0.5
+            gam4   = 1.
+            alpha = 1.0
+            S_Z_1 = np.array([( (gam1**2 / (fq**2 + gam1**2))**alpha ) if fq <= 5 else ( (gam1**2 / (5.0**2 + gam1**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_2 = np.array([( (gam2**2 / (fq**2 + gam2**2))**alpha ) if fq <= 5 else ( (gam2**2 / (5.0**2 + gam2**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_3 = np.array([( (gam3**2 / (fq**2 + gam3**2))**alpha ) if fq <= 5 else ( (gam3**2 / (5.0**2 + gam3**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_4 = np.array([( (gam4**2 / (fq**2 + gam4**2))**alpha ) if fq <= 5 else ( (gam4**2 / (5.0**2 + gam4**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z=0.1*S_Z_1+0.2*S_Z_2+0.3*S_Z_3+0.4*S_Z_4
+            self.P_temp = tf.constant(np.tile(np.reshape(np.sqrt(S_Z * M / Ts), (1, 1, self.M // 2)), (1, self.K, 1)),dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==15: # sum of lorentzians 2
+            gam1   = 0.01
+            gam2   = 0.1
+            gam3   = 0.5
+            gam4   = 1.
+            alpha = 1.0
+            S_Z_1 = np.array([( (gam1**2 / (fq**2 + gam1**2))**alpha ) if fq <= 5 else ( (gam1**2 / (5.0**2 + gam1**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_2 = np.array([( (gam2**2 / (fq**2 + gam2**2))**alpha ) if fq <= 5 else ( (gam2**2 / (5.0**2 + gam2**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_3 = np.array([( (gam3**2 / (fq**2 + gam3**2))**alpha ) if fq <= 5 else ( (gam3**2 / (5.0**2 + gam3**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_4 = np.array([( (gam4**2 / (fq**2 + gam4**2))**alpha ) if fq <= 5 else ( (gam4**2 / (5.0**2 + gam4**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z=0.4*S_Z_1+0.3*S_Z_2+0.2*S_Z_3+0.1*S_Z_4
+            self.P_temp = tf.constant(np.tile(np.reshape(np.sqrt(S_Z * M / Ts), (1, 1, self.M // 2)), (1, self.K, 1)),dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==16: # 0.5*f+0.5*1/f^2
+            alpha        = 2
+            S_Z_1         = 1*np.array([(fq)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])  
+            S_Z_2 = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
+            S_Z=0.1*S_Z_1+0.9*S_Z_2
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==17: # sum of lorentzian 4 and f
+            gam1   = 0.01
+            alpha = 1.0
+            S_Z_1 = np.array([( (gam1**2 / (fq**2 + gam1**2))**alpha ) if fq <= 5 else ( (gam1**2 / (5.0**2 + gam1**2))**alpha ) for fq in f[f >= 0]])[: self.M//2]
+            S_Z_2 = 1*np.array([(fq)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])
+            S_Z=0.7*S_Z_1+0.3*S_Z_2
+            self.P_temp = tf.constant(np.tile(np.reshape(np.sqrt(S_Z * M / Ts), (1, 1, self.M // 2)), (1, self.K, 1)),dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==18: # 0.2/f^2+0.8*1/f
+            alpha        = 1
+            S_Z_1         = 1*np.array([(1/(fq+1)**(alpha+1))*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])    
+            S_Z_2 = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
+            S_Z=0.2*S_Z_1+0.8*S_Z_2
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==19: # 0.2/f^2+0.8*1/f
+            alpha        = 1
+            S_Z_1         = 1*np.array([(1/(fq+1)**(alpha+1))*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])    
+            S_Z_2 = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
+            S_Z=0.8*S_Z_1+0.2*S_Z_2
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==20: # 0.5/f^2+0.3+0.2*f
+            alpha        = 2
+            S_Z_1         = 1*np.array([(1/(fq+1)**(alpha))*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])    
+            S_Z_2 = 1*np.array([(fq)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])
+            const        = 1.0
+            S_Z_3          = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]])[: self.M//2]
+            S_Z=0.5*S_Z_1+0.3*S_Z_2+0.2*S_Z_3
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
+        elif profile==21: # 0.6/f+0.3+0.1*f
+            alpha        = 1
+            S_Z_1         = 1*np.array([(1/(fq+1)**(alpha))*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])    
+            S_Z_2 = 1*np.array([(fq)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])
+            const        = 1.0
+            S_Z_3          = np.array([const if fq <= 12 else 1/13 for fq in f[f>=0]])[: self.M//2]
+            S_Z=0.6*S_Z_1+0.3*S_Z_2+0.1*S_Z_3
+            self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
+            self.call = self.call_1
         
     def call_0(self, inputs, training=False): # No noise
         """
@@ -593,24 +683,29 @@ class quantumTFsim():
     This is the main class that defines machine learning model of the qubit.
     """    
       
-    def __init__(self, T, M, dynamic_operators, static_operators, noise_operators, 
-                 measurement_operators, initial_states, K=1, waveform="Gaussian", 
-                 num_pulses=5, distortion=False, noise_profile=0,
-                 noise_mix_weights=None):  # ← ← ← NUEVO parámetro
+    def __init__(self, T, M, dynamic_operators, static_operators, noise_operators, measurement_operators, initial_states, K=1, waveform="Gaussian", num_pulses=5, distortion=False, noise_profile=0):
         """
-        noise_profile:
-            [p]        → un solo perfil
-            [p1, p2]   → mezcla temporal si noise_mix_weights no es None
-        noise_mix_weights = (w1, w2):
-            pesos crudos → se normalizan internamente → a+b=1
+        Class constructor.
+
+        T                : Evolution time
+        M                : Number of time steps
+        dynamic_operators: A list of arrays that represent the terms of the control Hamiltonian (that depend on pulses)
+        static_operators : A list of arrays that represent the terms of the drifting Hamiltonian (that are constant)
+        noise_operators  : A list of arrays that represent the terms of the classical noise Hamiltonians
+        K                : Number of noise realizations
+        waveform         : The type of waveform [either "Zero", "Square", or "Gaussian"]
+        num_pulses       : Number of pulses per control sequence
+        distortion       : True for simulating distortions, False for no distortions 
+        noise_profile    : The type of noise, a value chosen from [0,1,2,4,5,6]
         """
 
         delta_T   = T/M
         self.time_range = [(0.5*T/M) + (j*T/M) for j in range(M)]
         
+        # define a dummy input layer needed to generate the control pulses and noise
         dummy_input = layers.Input(shape=(1,))
-
-        # Pulses (sin cambio)
+        
+        # define the custom tensorflow layer that generates the control pulses for each direction and concatente if neccesary
         if len(dynamic_operators)>1:
             pulses            = [SigGen(T, M, num_pulses, waveform)(dummy_input) for _ in dynamic_operators]
             pulse_parameters  = layers.Concatenate(axis=-1)([p[0] for p in pulses])
@@ -623,57 +718,18 @@ class quantumTFsim():
         else:
             distorted_pulse_time_domain = pulse_time_domain
        
-        ###################################################################
-        # AQUI SE AGREGA LA MEZCLA CORRECTA DE RUIDO
-        ###################################################################
-
-        if isinstance(noise_profile, int):
-            profiles = [noise_profile]
-        else:
-            profiles = list(noise_profile)
-
-        if len(noise_operators) == 1:
-            # Un solo operador → permitimos mezcla temporal
-
-            if len(profiles) == 1 or noise_mix_weights is None:
-                # Caso original: un solo perfil
-                noise_time_domain = Noise_Layer(T, M, K, profiles[0])(dummy_input)
-
-            elif len(profiles) == 2:
-                # Mezcla temporal p1 & p2
-                p1, p2 = profiles
-                w1, w2 = noise_mix_weights
-
-                s = float(w1 + w2)
-                if s == 0.0:
-                    raise ValueError("noise_mix_weights w1+w2 = 0 no es válido.")
-
-                a = w1 / s
-                b = w2 / s
-
-                noise1 = Noise_Layer(T, M, K, p1)(dummy_input)
-                noise2 = Noise_Layer(T, M, K, p2)(dummy_input)
-
-                noise_time_domain = layers.Lambda(
-                    lambda x, a=a, b=b: a*x[0] + b*x[1],
-                    name=f"mixed_noise_profiles_{p1}_{p2}"
-                )([noise1, noise2])
-
-            else:
-                raise ValueError(
-                    f"Solo se permite mezclar hasta 2 perfiles cuando hay 1 operador de ruido. Recibido: {profiles}"
-                )
-
-        else:
-            # Comportamiento original cuando hay varias direcciones de ruido
+        # define the custom tensorflow layer that generates the noise realizations in time-domain and concatente if neccesary
+        if len(noise_operators)>1:
             noise = []
-            for profile in profiles:
-                if profile != 6:
-                    noise.append(Noise_Layer(T, M, K, profile)(dummy_input))
-                else:
-                    noise.append(Noise_Layer(T, M, K, profile)(noise[-1]))
-            noise_time_domain = layers.Concatenate(axis=-1)(noise)
-            
+            for profile in noise_profile:
+                if profile!=6: #uncorrelated along different directions
+                    noise.append( Noise_Layer(T, M, K, profile)(dummy_input) )
+                else:    #correlated with the prevu=ious direction
+                    noise.append( Noise_Layer(T, M, K, profile)(noise[-1]) )               
+            noise_time_domain = layers.Concatenate(axis=-1)(noise)     
+        else:
+            noise_time_domain = Noise_Layer(T, M, K, noise_profile[0])(dummy_input)              
+
         # define the custom tensorflow layer that constructs the H0 part of the Hamiltonian from parameters at each time step
         H0 = HamiltonianConstruction(dynamic_operators=dynamic_operators, static_operators=static_operators, name="H0")(distorted_pulse_time_domain)
 
