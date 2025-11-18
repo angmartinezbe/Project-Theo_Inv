@@ -191,24 +191,24 @@ class Noise_Layer(layers.Layer):
             S_Z=0.6*S_Z_1+0.3*S_Z_2+0.1*S_Z_3
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==22: # mezcla 1/f y 1/f^2 (lambda = 0.2)
+        elif profile==22: # mezcla 1/f y 1/f^2
             alpha1 = 1
             alpha2 = 2
             S_Z_1 = 1*np.array([(1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
             S_Z_2 = 1*np.array([(1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])
-            w1, w2 = 0.2, 0.8  # w1 + w2 = 1
+            w1, w2 = 0.2, 0.8  
             S_Z = w1*S_Z_1 + w2*S_Z_2
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
             )
             self.call = self.call_1
-        elif profile==23: # mezcla 1/f y 1/f^2 (lambda = 0.8)
+        elif profile==23: # mezcla 1/f y 1/f^2 
             alpha1 = 1
             alpha2 = 2
             S_Z_1 = 1*np.array([(1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
             S_Z_2 = 1*np.array([(1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])
-            w1, w2 = 0.8, 0.2  # w1 + w2 = 1
+            w1, w2 = 0.8, 0.2  
             S_Z = w1*S_Z_1 + w2*S_Z_2
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
