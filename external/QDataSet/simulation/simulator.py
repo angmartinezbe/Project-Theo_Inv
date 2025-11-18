@@ -191,53 +191,92 @@ class Noise_Layer(layers.Layer):
             S_Z=0.6*S_Z_1+0.3*S_Z_2+0.1*S_Z_3
             self.P_temp = tf.constant( np.tile( np.reshape( np.sqrt(S_Z*M/Ts), (1,1,self.M//2) ), (1,self.K,1) ), dtype=tf.complex64)
             self.call = self.call_1
-        elif profile==22: # mezcla 1/f y 1/f^2
-            alpha1 = 1
+            
+        elif profile==22:  # 0.6*const + 0.4*1/f^2
             alpha2 = 2
-            S_Z_1 = 1*np.array([(1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
-            S_Z_2 = 1*np.array([(1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])
-            w1, w2 = 0.2, 0.8  
-            S_Z = w1*S_Z_1 + w2*S_Z_2
-            self.P_temp = tf.constant(
-                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
-                dtype=tf.complex64
-            )
-            self.call = self.call_1
-        elif profile==23: # mezcla 1/f y 1/f^2 
-            alpha1 = 1
-            alpha2 = 2
-            S_Z_1 = 1*np.array([(1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
-            S_Z_2 = 1*np.array([(1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12) for fq in f[f>=0]])
-            w1, w2 = 0.8, 0.2  
-            S_Z = w1*S_Z_1 + w2*S_Z_2
-            self.P_temp = tf.constant(
-                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
-                dtype=tf.complex64
-            )
-            self.call = self.call_1
-        elif profile==24: # mezcla 1/f y f (similar a 13 pero con otros pesos)
-            alpha = 1
-            S_Z_1 = 1*np.array([(1/(fq+1)**alpha)*(fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])  # 1/f
-            S_Z_2 = 1*np.array([(fq)*(fq<=12) + (1/32)*(fq>12) for fq in f[f>=0]])              # f
-            w1, w2 = 0.7, 0.3 
-            S_Z = w1*S_Z_1 + w2*S_Z_2
-            self.P_temp = tf.constant(
-                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
-                dtype=tf.complex64
-            )
-            self.call = self.call_1
-        elif profile==25: # background 1/f + pico Lorentziano (gam=0.05)
-            alpha = 1.0
-            # background 1/f
-            S_bg = 1*np.array([(1/(fq+1))* (fq<=12) + (1/13)*(fq>12) for fq in f[f>=0]])
-            # Lorentziana centrada en 0
-            gam   = 0.05
-            S_L   = np.array([
-                (gam**2 / (fq**2 + gam**2)) if fq <= 5 else (gam**2 / (5.0**2 + gam**2))
+            # 1/f^2
+            S_1overf2 = 1*np.array([
+                (1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12)
                 for fq in f[f>=0]
             ])[: self.M//2]
-            w_bg, w_L = 0.8, 0.2
-            S_Z = w_bg*S_bg + w_L*S_L
+
+            # constante (tipo perfil 3 pero con escala 1.0)
+            const = 1.0
+            S_const = np.array([
+                const if fq <= 12 else 1/13
+                for fq in f[f>=0]
+            ])[: self.M//2]
+
+            w1, w2 = 0.6, 0.4  # const, 1/f^2
+            S_Z = w1*S_const + w2*S_1overf2
+            self.P_temp = tf.constant(
+                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
+                dtype=tf.complex64
+            )
+            self.call = self.call_1
+
+        elif profile==23:  # 0.7*(1/f) + 0.3*const
+            alpha1 = 1
+            # 1/f
+            S_1overf = 1*np.array([
+                (1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12)
+                for fq in f[f>=0]
+            ])[: self.M//2]
+
+            # constante
+            const = 1.0
+            S_const = np.array([
+                const if fq <= 12 else 1/13
+                for fq in f[f>=0]
+            ])[: self.M//2]
+
+            w1, w2 = 0.7, 0.3  # 1/f, const
+            S_Z = w1*S_1overf + w2*S_const
+            self.P_temp = tf.constant(
+                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
+                dtype=tf.complex64
+            )
+            self.call = self.call_1
+
+        elif profile==24:  # 0.3*(1/f) + 0.7*(1/f^2)
+            alpha1 = 1
+            alpha2 = 2
+            S_1overf = 1*np.array([
+                (1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12)
+                for fq in f[f>=0]
+            ])[: self.M//2]
+            S_1overf2 = 1*np.array([
+                (1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12)
+                for fq in f[f>=0]
+            ])[: self.M//2]
+
+            w1, w2 = 0.3, 0.7  # 1/f, 1/f^2
+            S_Z = w1*S_1overf + w2*S_1overf2
+            self.P_temp = tf.constant(
+                np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
+                dtype=tf.complex64
+            )
+            self.call = self.call_1
+
+        elif profile==25:  # 0.4*(1/f) + 0.4*(1/f^2) + 0.2*const
+            alpha1 = 1
+            alpha2 = 2
+            S_1overf = 1*np.array([
+                (1/(fq+1)**alpha1)*(fq<=12) + (1/13)*(fq>12)
+                for fq in f[f>=0]
+            ])[: self.M//2]
+            S_1overf2 = 1*np.array([
+                (1/(fq+1)**alpha2)*(fq<=12) + (1/13)**2*(fq>12)
+                for fq in f[f>=0]
+            ])[: self.M//2]
+            const = 1.0
+            S_const = np.array([
+                const if fq <= 12 else 1/13
+                for fq in f[f>=0]
+            ])[: self.M//2]
+
+            w1, w2, w3 = 0.4, 0.4, 0.2  # 1/f, 1/f^2, const
+            S_Z = w1*S_1overf + w2*S_1overf2 + w3*S_const
             self.P_temp = tf.constant(
                 np.tile(np.reshape(np.sqrt(S_Z*M/Ts), (1,1,self.M//2)), (1,self.K,1)),
                 dtype=tf.complex64
